@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+  <meta name="theme-color" content="#FFFFFF"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>My Little Books</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" type="image/png" href="assets/img/icon-192.png"/>
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="assets/css/app.css"/>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="brand">📚 My Little Books</div>
+  <div class="d-flex gap-2 align-items-center">
+    <div id="topbar-extra"></div>
+    <button class="btn-icon" id="theme-toggle" onclick="toggleTheme()" title="Toggle tema">
+      <i class="bi bi-sun icon-sun"></i>
+      <i class="bi bi-moon icon-moon"></i>
+    </button>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ══ HOME ══ -->
+  <div id="page-home" class="page px-3">
+    <div class="stagger">
+
+      <!-- Greeting hero -->
+      <div class="d-flex align-items-center justify-content-between mb-3 pt-1">
+        <div>
+          <div style="font-size:.82rem;color:var(--text-3);font-weight:500" id="dash-greeting"></div>
+          <div style="font-size:1.6rem;font-weight:800;line-height:1.2" id="dash-name">Reader 👋</div>
+        </div>
+        <div id="dash-level-badge"></div>
+      </div>
+
+      <!-- Stats -->
+      <div class="row g-2 mb-3">
+        <div class="col-3"><div class="stat-card"><div class="stat-icon">📚</div><div class="stat-val" id="s-books">-</div><div class="stat-label">Buku</div></div></div>
+        <div class="col-3"><div class="stat-card"><div class="stat-icon">✍️</div><div class="stat-val" id="s-notes">-</div><div class="stat-label">Catatan</div></div></div>
+        <div class="col-3"><div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="s-pages">-</div><div class="stat-label">Halaman</div></div></div>
+        <div class="col-3"><div class="stat-card"><div class="stat-icon">🔥</div><div class="stat-val" id="s-streak">-</div><div class="stat-label">Streak</div></div></div>
+      </div>
+
+      <!-- Target progress -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="section-header mb-0">🎯 Target Bulan Ini</span>
+          <span style="font-size:.75rem;color:var(--text-3)" id="dash-month"></span>
+        </div>
+        <div id="dash-targets"></div>
+      </div>
+
+      <!-- Quote of the Day -->
+      <div class="card p-3 mb-3" style="border-left:3px solid var(--accent)">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="section-header mb-0">💬 Quote Hari Ini</span>
+          <button class="btn-icon" style="width:28px;height:28px" onclick="localStorage.removeItem('mlb-qod-'+new Date().toISOString().slice(0,10));loadQuoteOfDay()" title="Ganti quote">
+            <i class="bi bi-arrow-clockwise" style="font-size:.8rem"></i>
+          </button>
+        </div>
+        <div id="quote-of-day">
+          <div class="skeleton" style="height:50px;border-radius:var(--radius-sm)"></div>
+        </div>
+      </div>
+
+      <!-- Pomodoro + Check-in widget -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="font-size:1.2rem">🍅</span>
+            <div>
+              <div style="font-weight:700;font-size:.92rem">Reading Timer</div>
+              <div style="font-size:.7rem;color:var(--text-3)">Pomodoro 25 menit · Auto log halaman</div>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn-ghost" style="font-size:.78rem;padding:.35rem .7rem" onclick="openCheckinModal()">
+              <i class="bi bi-calendar-check me-1"></i>Check-in
+            </button>
+            <button class="btn-accent" style="font-size:.78rem;padding:.35rem .7rem" onclick="openPomodoroModal()">
+              <i class="bi bi-play-circle me-1"></i>Mulai
+            </button>
+          </div>
+        </div>
+        <div id="today-timer-stats" style="font-size:.78rem;color:var(--text-3)">
+          Belum ada sesi hari ini — tap Mulai untuk mulai membaca!
+        </div>
+      </div>
+
+      <!-- AI Rekomendasi -->
+      <div class="card p-3 mb-3" style="border:1.5px solid var(--accent);background:var(--accent-bg)">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="font-size:1.2rem">🤖</span>
+            <div>
+              <div style="font-weight:700;font-size:.92rem">Rekomendasi AI</div>
+              <div style="font-size:.7rem;color:var(--text-3)">Dipersonalisasi dari minat & koleksimu</div>
+            </div>
+          </div>
+          <button class="btn-accent" style="padding:.35rem .8rem;font-size:.78rem"
+            onclick="loadAIRecommendations(true)">
+            <i class="bi bi-stars me-1"></i>Refresh
+          </button>
+        </div>
+        <div id="ai-recommendations">
+          <div class="text-center py-3" style="color:var(--text-3);font-size:.85rem">
+            <div style="font-size:2rem">✨</div>
+            <div>Tap <b>Refresh</b> untuk rekomendasi buku dari AI</div>
+            <div style="font-size:.72rem;margin-top:.3rem">Hingga 20 buku · Filter dari koleksimu</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reading Schedule -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="font-size:1.1rem">📅</span>
+            <span style="font-weight:700;font-size:.92rem">Jadwal Baca</span>
+          </div>
+          <button class="btn-ghost" style="font-size:.72rem;padding:.25rem .6rem" onclick="navigateTo('books')">
+            <i class="bi bi-arrow-right me-1"></i>Atur
+          </button>
+        </div>
+        <div id="reading-schedule-list">
+          <div style="font-size:.78rem;color:var(--text-3)">Belum ada jadwal — buka detail buku → tombol Jadwal</div>
+        </div>
+      </div>
+
+      <!-- Spaced Repetition Review -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <span style="font-size:1.1rem">🧠</span>
+            <div>
+              <div style="font-weight:700;font-size:.92rem">Review Catatan</div>
+              <div style="font-size:.68rem;color:var(--text-3)">Spaced repetition · Ingat lebih lama</div>
+            </div>
+          </div>
+        </div>
+        <div id="review-queue-wrap">
+          <div class="skeleton" style="height:40px;border-radius:var(--radius-sm)"></div>
+        </div>
+      </div>
+
+      <!-- Currently reading -->
+      <div id="dash-reading-wrap" class="d-none mb-3">
+        <span class="section-header">📖 Sedang Dibaca</span>
+        <div id="dash-reading"></div>
+      </div>
+
+      <!-- Recent notes -->
+      <span class="section-header">📝 Catatan Terbaru</span>
+      <div id="dash-recent-notes" class="mb-3"></div>
+
+      <!-- Reminders today -->
+      <div id="dash-reminders-wrap" class="d-none">
+        <span class="section-header">🔔 Reminder Hari Ini</span>
+        <div id="dash-reminders"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ BUKU ══ -->
+  <div id="page-books" class="page px-3">
+    <div class="stagger">
+      <div class="mb-3 pt-1">
+        <div style="font-size:1.5rem;font-weight:800">Koleksi Buku</div>
+      </div>
+      <div class="search-wrap mb-3">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" class="form-control" id="book-search" placeholder="Cari judul atau penulis..." oninput="filterBooks()"/>
+      </div>
+      <div class="chips-scroll mb-3">
+        <div class="chip active" onclick="setBookFilter(this,'')">Semua</div>
+        <div class="chip" onclick="setBookFilter(this,'reading')">📖 Dibaca</div>
+        <div class="chip" onclick="setBookFilter(this,'want')">⭐ Ingin Baca</div>
+        <div class="chip" onclick="setBookFilter(this,'done')">✅ Selesai</div>
+        <div class="chip" onclick="setBookFilter(this,'paused')">⏸ Ditunda</div>
+      </div>
+      <div id="books-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ CATATAN ══ -->
+  <div id="page-notes" class="page px-3">
+    <div class="stagger">
+      <ul class="nav nav-tabs mb-3" id="notes-tabs">
+        <li class="nav-item"><button class="nav-link active" onclick="switchNoteTab('notes',this)">Catatan</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchNoteTab('quotes',this)">Kutipan</button></li>
+      </ul>
+
+      <!-- Notes panel -->
+      <div id="panel-notes">
+        <div class="d-flex gap-2 mb-2">
+          <div class="search-wrap flex-grow-1">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="form-control" id="note-search" placeholder="Cari catatan..." oninput="searchNotes()"/>
+          </div>
+          <select class="form-select w-auto" id="note-sort" onchange="loadNotes()">
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="rating">Rating</option>
+            <option value="title">Judul</option>
+          </select>
+        </div>
+        <div class="chips-scroll mb-3" id="tag-chips"></div>
+        <!-- Export button -->
+        <div class="d-flex justify-content-end mb-2">
+          <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="exportNotesToPDF()">
+            <i class="bi bi-printer me-1"></i>Export PDF
+          </button>
+        </div>
+        <div id="notes-list"></div>
+      </div>
+
+      <!-- Quotes panel -->
+      <div id="panel-quotes" class="d-none">
+        <div id="quotes-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LEVEL ══ -->
+  <div id="page-level" class="page px-3">
+    <div class="stagger">
+      <ul class="nav nav-tabs mb-3" id="level-tabs">
+        <li class="nav-item"><button class="nav-link active" onclick="switchLevelTab('progress',this)">Progress</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchLevelTab('badges',this)">Badge</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchLevelTab('streak',this)">Streak</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchLevelTab('calendar',this)">Kalender</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="switchLevelTab('report',this)">Laporan</button></li>
+      </ul>
+
+      <!-- Progress -->
+      <div id="panel-progress">
+        <div class="card p-3 mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div id="level-ring" class="ring-wrap"></div>
+            <div class="flex-grow-1">
+              <div style="font-size:1.2rem;font-weight:800" id="level-name">-</div>
+              <div style="font-size:.82rem;color:var(--text-3);margin-top:2px" id="level-xp-text">-</div>
+              <div class="xp-bar-wrap mt-2"><div class="xp-bar-fill" id="level-bar" style="width:0%"></div></div>
+            </div>
+          </div>
+        </div>
+        <span class="section-header">Target Progress</span>
+        <div id="target-progress-list"></div>
+      </div>
+
+      <!-- Badges -->
+      <div id="panel-badges" class="d-none">
+        <div class="badge-grid" id="badges-grid"></div>
+      </div>
+
+      <!-- Streak + Heatmap -->
+      <div id="panel-streak" class="d-none">
+        <!-- Streak summary card -->
+        <div class="card p-3 mb-3">
+          <div class="d-flex align-items-center gap-3">
+            <!-- Streak number -->
+            <div class="text-center flex-shrink-0"
+              style="width:80px;border-right:1px solid var(--border);padding-right:.75rem">
+              <div style="font-size:1.6rem;line-height:1">🔥</div>
+              <div style="font-size:2.4rem;font-weight:800;color:var(--accent);line-height:1.1"
+                id="streak-count">0</div>
+              <div style="font-size:.65rem;color:var(--text-3);margin-top:.2rem;font-weight:600">
+                HARI STREAK
+              </div>
+            </div>
+            <!-- Action buttons -->
+            <div class="flex-grow-1 d-flex flex-column gap-2">
+              <button class="btn-accent" style="font-size:.82rem;padding:.55rem"
+                onclick="openPomodoroModal()">
+                <i class="bi bi-play-circle me-1"></i>Mulai Baca
+              </button>
+              <button class="btn-ghost" style="font-size:.82rem;padding:.5rem"
+                onclick="openCheckinModal()">
+                <i class="bi bi-calendar-check me-1"></i>Daily Check-in
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Heatmap 365 hari -->
+        <span class="section-header">📅 Aktivitas Membaca (365 Hari)</span>
+        <div id="heatmap-wrap" class="card p-3 mb-3">
+          <div class="text-center py-2">
+            <button class="btn-ghost" style="font-size:.82rem" onclick="loadHeatmap()">
+              <i class="bi bi-calendar3 me-1"></i>Muat Aktivitas
+            </button>
+          </div>
+        </div>
+
+        <!-- Streak grid 30 hari -->
+        <span class="section-header">30 Hari Terakhir</span>
+        <div class="streak-grid mb-3" id="streak-grid"></div>
+      </div>
+
+      <!-- Calendar & Reminder -->
+      <div id="panel-calendar" class="d-none">
+        <!-- Calendar header nav -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <button class="btn-icon" onclick="calPrev()"><i class="bi bi-chevron-left"></i></button>
+          <div style="font-weight:700;font-size:1rem" id="cal-header"></div>
+          <button class="btn-icon" onclick="calNext()"><i class="bi bi-chevron-right"></i></button>
+        </div>
+        <!-- Day headers -->
+        <div class="cal-grid mb-1" id="cal-day-headers">
+          <div class="cal-day-header">Min</div><div class="cal-day-header">Sen</div>
+          <div class="cal-day-header">Sel</div><div class="cal-day-header">Rab</div>
+          <div class="cal-day-header">Kam</div><div class="cal-day-header">Jum</div>
+          <div class="cal-day-header">Sab</div>
+        </div>
+        <!-- Calendar grid -->
+        <div class="cal-grid mb-4" id="cal-grid"></div>
+        <!-- Reminders section -->
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="section-header mb-0">🔔 Reminder</span>
+          <button class="btn-accent" style="padding:.35rem .8rem;font-size:.78rem" onclick="openReminderModal()">
+            <i class="bi bi-plus-lg me-1"></i>Tambah
+          </button>
+        </div>
+        <div id="reminders-list"></div>
+      </div>
+
+      <!-- Report -->
+      <div id="panel-report" class="d-none">
+        <div class="d-flex gap-2 mb-3">
+          <select class="form-select w-auto" id="report-period" onchange="loadReport()">
+            <option value="monthly">Bulanan</option>
+            <option value="weekly">Mingguan</option>
+          </select>
+          <input type="month" class="form-control w-auto" id="report-month" onchange="loadReport()"/>
+        </div>
+        <div id="report-stats" class="row g-2 mb-3"></div>
+        <canvas id="report-chart" height="200"></canvas>
+        <div class="mt-3" id="report-books-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SETTINGS ══ -->
+  <div id="page-settings" class="page px-3">
+    <div class="stagger">
+      <div style="font-size:1.5rem;font-weight:800;margin-bottom:1rem;padding-top:.25rem">Setelan</div>
+
+      <!-- Theme toggle -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div style="font-weight:700;font-size:.9rem">🎨 Tema Tampilan</div>
+            <div style="font-size:.8rem;color:var(--text-3);margin-top:2px" id="theme-label">Mode Terang</div>
+          </div>
+          <button onclick="toggleTheme()" style="
+            width:54px;height:30px;border-radius:15px;cursor:pointer;
+            background:var(--bg-4);border:1.5px solid var(--border-2);
+            position:relative;transition:background .3s;padding:0;
+          ">
+            <span id="theme-knob" style="
+              position:absolute;top:3px;left:3px;
+              width:22px;height:22px;border-radius:50%;
+              background:var(--accent);transition:transform .3s;
+              display:flex;align-items:center;justify-content:center;font-size:.75rem;
+            ">☀️</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Reading Interests -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.5rem">📚 Minat Bacaan</div>
+        <div style="font-size:.82rem;color:var(--text-2);margin-bottom:.75rem">
+          Pilih genre yang kamu suka agar AI bisa rekomendasikan buku yang tepat
+        </div>
+        <div class="d-flex flex-wrap gap-2" id="interest-chips">
+          <!-- Diisi oleh renderInterestChips() -->
+        </div>
+        <button class="btn-accent mt-3" style="font-size:.82rem;padding:.5rem 1rem"
+          onclick="saveInterests()">
+          <i class="bi bi-check-lg me-1"></i>Simpan Minat
+        </button>
+      </div>
+
+      <!-- Profile -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.75rem">👤 Profil</div>
+        <div class="mb-2"><label class="form-label">Nama Tampilan</label>
+          <input type="text" class="form-control" id="set-display-name"/></div>
+        <div class="mb-2"><label class="form-label">Email (opsional)</label>
+          <input type="email" class="form-control" id="set-email" placeholder="email@kamu.com"/></div>
+        <button class="btn-accent" style="font-size:.82rem;padding:.45rem .9rem" onclick="saveProfile()">Simpan Profil</button>
+      </div>
+
+      <!-- Notifikasi Telegram per user -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.5rem">🔔 Notifikasi Pribadi</div>
+        <div style="font-size:.75rem;color:var(--text-3);margin-bottom:.75rem">Reminder Telegram khusus akun ini</div>
+        <div class="mb-2"><label class="form-label">Telegram Chat ID saya</label>
+          <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="set-telegram-chat" placeholder="Kosongkan jika tidak ingin"/>
+            <button class="btn-ghost" style="white-space:nowrap;font-size:.78rem" onclick="setupTelegramUser()">
+              <i class="bi bi-telegram me-1"></i>Cara Setup
+            </button>
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <label class="form-label">Jam Notif</label>
+            <select class="form-select" id="set-notif-hour">
+              <option value="6">06:00</option><option value="7" selected>07:00</option>
+              <option value="8">08:00</option><option value="9">09:00</option>
+              <option value="20">20:00</option><option value="21">21:00</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Aktifkan</label>
+            <div class="d-flex align-items-center" style="height:38px;margin-top:2px">
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" id="set-notif-enabled" checked/>
+                <label class="form-check-label" for="set-notif-enabled" style="font-size:.82rem">Aktif</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button class="btn-accent" style="font-size:.82rem;padding:.45rem .9rem" onclick="saveProfile()">Simpan</button>
+      </div>
+
+      <!-- Tampilan -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.75rem">🎨 Tampilan</div>
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div><div style="font-size:.85rem;font-weight:500">Tema</div>
+            <div style="font-size:.72rem;color:var(--text-3)" id="theme-label">Mode Terang</div>
+          </div>
+          <button onclick="toggleTheme()" style="width:52px;height:28px;border-radius:14px;background:var(--bg-4);border:1.5px solid var(--border-2);cursor:pointer;position:relative;padding:0;">
+            <span id="theme-knob" style="position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--accent);transition:transform .3s;display:flex;align-items:center;justify-content:center;font-size:.7rem">☀️</span>
+          </button>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Ukuran Font Baca</label>
+          <select class="form-select" id="set-font-size">
+            <option value="sm">Kecil</option>
+            <option value="md" selected>Sedang</option>
+            <option value="lg">Besar</option>
+          </select>
+        </div>
+        <button class="btn-accent" style="font-size:.82rem;padding:.45rem .9rem" onclick="saveProfile()">Simpan</button>
+      </div>
+
+      <!-- Password -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.75rem">🔐 Ganti Password</div>
+        <div class="mb-2"><label class="form-label">Password Lama</label>
+          <input type="password" class="form-control" id="set-old-pw"/></div>
+        <div class="mb-2"><label class="form-label">Password Baru</label>
+          <input type="password" class="form-control" id="set-new-pw"/></div>
+        <button class="btn-ghost" onclick="changePassword()">Ganti Password</button>
+      </div>
+
+      <!-- Targets -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.75rem">🎯 Target Baca</div>
+        <div class="row g-2 mb-2">
+          <div class="col-4"><label class="form-label">Buku/Bulan</label>
+            <input type="number" class="form-control" id="set-t-books" min="1"/></div>
+          <div class="col-4"><label class="form-label">Halaman/Hari</label>
+            <input type="number" class="form-control" id="set-t-pages" min="1"/></div>
+          <div class="col-4"><label class="form-label">Catatan/Minggu</label>
+            <input type="number" class="form-control" id="set-t-notes" min="1"/></div>
+        </div>
+        <button class="btn-accent" style="font-size:.82rem;padding:.45rem .9rem" onclick="saveTargets()">Simpan Target</button>
+      </div>
+
+      <!-- Backup Lokal -->
+      <div class="card p-3 mb-3">
+        <div style="font-weight:700;font-size:.9rem;margin-bottom:.75rem">💾 Backup Lokal</div>
+        <div class="d-flex gap-2">
+          <button class="btn-ghost flex-grow-1" onclick="doBackup()"><i class="bi bi-download me-1"></i>Export JSON</button>
+          <label class="btn-ghost flex-grow-1 text-center mb-0" style="cursor:pointer">
+            <i class="bi bi-upload me-1"></i>Import JSON
+            <input type="file" accept=".json" class="d-none" onchange="doRestore(event)"/>
+          </label>
+        </div>
+      </div>
+
+      <!-- Telegram Reminder -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div>
+            <div style="font-weight:700;font-size:.9rem">📱 Telegram Reminder</div>
+            <div style="font-size:.72rem;color:var(--text-3)">Notifikasi harian otomatis via bot</div>
+          </div>
+          <span style="font-size:1.4rem">🤖</span>
+        </div>
+        <div id="telegram-status" class="mb-2">
+          <div class="skeleton" style="height:18px;width:55%;border-radius:4px"></div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn-accent" style="font-size:.78rem;padding:.4rem .8rem" onclick="setupTelegram()">
+            <i class="bi bi-gear me-1"></i>Setup Bot
+          </button>
+          <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="testTelegram()">
+            <i class="bi bi-send me-1"></i>Test Kirim
+          </button>
+          <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="showCronInfo()">
+            <i class="bi bi-clock me-1"></i>Jadwal Cron
+          </button>
+        </div>
+      </div>
+
+      <!-- Google Drive Backup -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div>
+            <div style="font-weight:700;font-size:.9rem">☁️ Google Drive Backup</div>
+            <div style="font-size:.72rem;color:var(--text-3)">Backup otomatis ke cloud</div>
+          </div>
+          <span style="font-size:1.4rem">🟢</span>
+        </div>
+        <div id="gdrive-status" class="mb-2">
+          <div class="skeleton" style="height:18px;width:55%;border-radius:4px"></div>
+        </div>
+        <div class="d-flex gap-2 mb-2 flex-wrap">
+          <button class="btn-accent" style="font-size:.78rem;padding:.4rem .8rem"
+            id="btn-gdrive-backup" onclick="backupToDrive()">
+            <i class="bi bi-cloud-upload me-1"></i>Backup ke Drive
+          </button>
+          <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="loadDriveFileList()">
+            <i class="bi bi-list-ul me-1"></i>Lihat File
+          </button>
+          <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="showDriveSetupGuide()">
+            <i class="bi bi-question-circle me-1"></i>Cara Setup
+          </button>
+        </div>
+        <div id="gdrive-files"></div>
+      </div>
+
+      <!-- Admin Panel (hanya muncul jika role=admin) -->
+      <div id="admin-panel" class="d-none">
+        <div class="card p-3 mb-3" style="border-color:var(--accent)">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <div style="font-weight:700;font-size:.9rem">👑 Admin — Kelola User</div>
+            <span style="font-size:.7rem;background:var(--accent);color:#fff;padding:.1rem .5rem;border-radius:20px;font-weight:700">ADMIN</span>
+          </div>
+          <div id="admin-user-list" style="max-height:300px;overflow-y:auto"></div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn-accent" style="font-size:.78rem;padding:.4rem .8rem" onclick="openCreateUserModal()">
+              <i class="bi bi-person-plus me-1"></i>Tambah User
+            </button>
+            <button class="btn-ghost" style="font-size:.78rem;padding:.4rem .8rem" onclick="loadAdminUsers()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <button class="btn-ghost w-100 btn-danger mb-3" onclick="doLogout()">
+        <i class="bi bi-box-arrow-left me-2"></i>Keluar
+      </button>
+      <p class="text-center" style="font-size:.72rem;color:var(--text-3)">My Little Books v1.0.0</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <div id="nav-indicator"></div>
+  <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
+    <i class="bi bi-house-fill"></i><span>Home</span></button>
+  <button class="nav-item" data-page="books" onclick="navigateTo('books')">
+    <i class="bi bi-book-fill"></i><span>Buku</span></button>
+  <button class="nav-item" data-page="notes" onclick="navigateTo('notes')">
+    <i class="bi bi-journal-richtext"></i><span>Catatan</span></button>
+  <button class="nav-item" data-page="level" onclick="navigateTo('level')">
+    <i class="bi bi-trophy-fill"></i><span>Level</span></button>
+  <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+    <i class="bi bi-gear-fill"></i><span>Setelan</span></button>
+</nav>
+
+<button class="fab d-none" id="fab" onclick="fabAction()">
+  <i class="bi bi-plus-lg" id="fab-icon"></i>
+</button>
+<div id="toast-container"></div>
+
+<!-- ══ MODALS ══ -->
+<!-- Modal Buku -->
+<div class="modal fade" id="modal-book" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="modal-book-title">Tambah Buku</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="book-id"/>
+        <div class="text-center mb-4">
+          <div id="cover-preview" class="book-cover-placeholder mx-auto mb-2" style="width:80px;height:112px;border-radius:12px">📗</div>
+          <label class="btn-ghost" style="cursor:pointer;font-size:.78rem;padding:.4rem .8rem">
+            <i class="bi bi-camera me-1"></i>Upload Cover
+            <input type="file" id="cover-file" accept="image/*" class="d-none" onchange="previewCover(event)"/></label>
+        </div>
+        <div class="mb-3"><label class="form-label">Judul *</label>
+          <input type="text" class="form-control" id="book-title" placeholder="Judul buku"/></div>
+        <div class="mb-3"><label class="form-label">Penulis</label>
+          <input type="text" class="form-control" id="book-author"/></div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label">Genre</label>
+            <input type="text" class="form-control" id="book-genre"/></div>
+          <div class="col-6"><label class="form-label">ISBN</label>
+            <input type="text" class="form-control" id="book-isbn"/></div>
+        </div>
+        <div class="mb-3"><label class="form-label">Deskripsi</label>
+          <textarea class="form-control" id="book-desc" rows="2"></textarea></div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label">Status</label>
+            <select class="form-select" id="book-status" onchange="toggleBookDates()">
+              <option value="want">⭐ Ingin Baca</option><option value="reading">📖 Dibaca</option>
+              <option value="done">✅ Selesai</option><option value="paused">⏸ Ditunda</option>
+            </select></div>
+          <div class="col-6"><label class="form-label">Total Halaman</label>
+            <input type="number" class="form-control" id="book-total-pages" min="0"/></div>
+        </div>
+        <div class="row g-2 mb-3" id="book-dates-row">
+          <div class="col-6"><label class="form-label">Mulai Baca</label>
+            <input type="date" class="form-control" id="book-started"/></div>
+          <div class="col-6" id="book-finished-wrap"><label class="form-label">Selesai</label>
+            <input type="date" class="form-control" id="book-finished"/></div>
+        </div>
+        <div class="mb-2"><label class="form-label">Rating</label>
+          <div class="stars" id="book-rating-stars">
+            <i class="bi bi-star" data-v="1"></i><i class="bi bi-star" data-v="2"></i>
+            <i class="bi bi-star" data-v="3"></i><i class="bi bi-star" data-v="4"></i>
+            <i class="bi bi-star" data-v="5"></i></div>
+          <input type="hidden" id="book-rating" value="0"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="saveBook()">
+          <span id="book-save-text"><i class="bi bi-check-lg me-1"></i>Simpan</span>
+          <span id="book-save-spin" class="d-none spinner-border spinner-border-sm"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detail Buku -->
+<div class="modal fade" id="modal-book-detail" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Detail Buku</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body" id="book-detail-body"></div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:.5rem">
+        <button class="btn-ghost btn-danger" onclick="deleteBookFromDetail()"><i class="bi bi-trash"></i></button>
+        <button class="btn-ghost" onclick="editBookFromDetail()"><i class="bi bi-pencil me-1"></i>Edit</button>
+        <button class="btn-ghost" onclick="openScheduleFromDetail()"
+          style="color:var(--blue);border-color:var(--blue)">
+          <i class="bi bi-calendar-range me-1"></i>Jadwal
+        </button>
+        <button class="btn-ghost" id="btn-ai-summary"
+          onclick="aiSummaryFromDetail()"
+          style="color:var(--accent);border-color:var(--accent)">
+          <i class="bi bi-stars me-1"></i>AI
+        </button>
+        <button class="btn-accent" onclick="addNoteFromBook()"><i class="bi bi-plus me-1"></i>Catatan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Catatan -->
+<div class="modal fade" id="modal-note" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="modal-note-title">Tambah Catatan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="note-id"/>
+        <div class="mb-3"><label class="form-label">Judul *</label>
+          <input type="text" class="form-control" id="note-title"/></div>
+        <div class="row g-2 mb-3">
+          <div class="col-8"><label class="form-label">Buku *</label>
+            <select class="form-select" id="note-book-id"></select></div>
+          <div class="col-4"><label class="form-label">Rating</label>
+            <div class="stars mt-1" id="note-rating-stars">
+              <i class="bi bi-star" data-v="1"></i><i class="bi bi-star" data-v="2"></i>
+              <i class="bi bi-star" data-v="3"></i><i class="bi bi-star" data-v="4"></i>
+              <i class="bi bi-star" data-v="5"></i></div>
+            <input type="hidden" id="note-rating" value="0"/></div>
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label">Hal. Mulai</label>
+            <input type="number" class="form-control" id="note-page-start" min="0"/></div>
+          <div class="col-6"><label class="form-label">Hal. Selesai</label>
+            <input type="number" class="form-control" id="note-page-end" min="0"/></div>
+        </div>
+        <div class="mb-3"><label class="form-label">Tag</label>
+          <input type="text" class="form-control" id="note-tags" placeholder="islami, motivasi (pisah koma)"/></div>
+        <div class="d-flex gap-2 mb-2">
+          <button type="button" class="btn-ghost" style="font-size:.8rem;padding:.4rem .75rem" onclick="openQuranPicker()">🌙 Al-Qur'an</button>
+          <button type="button" class="btn-ghost" style="font-size:.8rem;padding:.4rem .75rem" onclick="openHadithPicker()">📖 Hadits</button>
+        </div>
+        <label class="form-label">Isi Catatan *</label>
+        <div id="note-editor" style="max-height:240px;overflow-y:auto"></div>
+        <div class="mt-3">
+          <label class="form-label">Lampiran Foto (maks 5)</label>
+          <div class="d-flex flex-wrap gap-2" id="attach-preview"></div>
+          <label class="btn-ghost mt-2" style="cursor:pointer;font-size:.8rem;padding:.4rem .75rem">
+            <i class="bi bi-image me-1"></i>Tambah Foto
+            <input type="file" id="attach-file" accept="image/*" class="d-none" onchange="uploadAttachment(event)"/></label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="saveNote()">
+          <span id="note-save-text"><i class="bi bi-check-lg me-1"></i>Simpan</span>
+          <span id="note-save-spin" class="d-none spinner-border spinner-border-sm"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal View Catatan — Reading Mode -->
+<div class="modal fade" id="modal-view-note" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <!-- Reading progress bar -->
+      <div style="height:3px;background:var(--bg-3);flex-shrink:0">
+        <div id="view-note-progress" style="height:100%;background:var(--accent);border-radius:0;transition:width .4s ease;width:0%"></div>
+      </div>
+
+      <div class="modal-header" style="padding:.75rem 1rem !important">
+        <!-- Title + meta -->
+        <div class="flex-grow-1 overflow-hidden me-2">
+          <h5 class="modal-title text-truncate" id="view-note-title">-</h5>
+          <div style="font-size:.75rem;color:var(--text-3);margin-top:2px" id="view-note-meta"></div>
+        </div>
+        <!-- Controls -->
+        <div class="d-flex align-items-center gap-1">
+          <button class="btn-icon" id="btn-sepia" onclick="toggleSepia()" title="Mode sepia">
+            <i class="bi bi-circle-half"></i>
+          </button>
+          <button class="btn-icon" id="btn-fontsize" onclick="toggleFontSize()" title="Perbesar teks">
+            <i class="bi bi-text-paragraph"></i>
+          </button>
+          <button class="btn-icon" onclick="printNote()" title="Print / Export PDF">
+            <i class="bi bi-printer"></i>
+          </button>
+          <button type="button" class="btn-close ms-1" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+
+      <div class="modal-body" style="padding:1.25rem !important">
+        <!-- Note content -->
+        <div class="reading-mode" id="view-note-content"></div>
+        <!-- Attachments -->
+        <div id="view-note-attachments" class="d-flex flex-wrap gap-2 mt-3"></div>
+      </div>
+
+      <div class="modal-footer" style="justify-content:space-between !important">
+        <!-- Prev / Next nav -->
+        <div id="view-note-nav" class="d-flex align-items-center gap-2">
+          <!-- diisi JS -->
+        </div>
+        <!-- Actions -->
+        <div class="d-flex gap-2">
+          <button class="btn-ghost btn-danger" onclick="deleteNoteFromView()" title="Hapus">
+            <i class="bi bi-trash"></i>
+          </button>
+          <button class="btn-ghost" onclick="editNoteFromView()">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Kutipan -->
+<div class="modal fade" id="modal-quote" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="modal-quote-title">Tambah Kutipan</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="quote-id"/>
+        <div class="mb-3"><label class="form-label">Buku *</label>
+          <select class="form-select" id="quote-book-id"></select></div>
+        <div class="mb-3"><label class="form-label">Teks Kutipan *</label>
+          <textarea class="form-control" id="quote-text" rows="4" placeholder='"Kata-kata berkesan..."'></textarea></div>
+        <div class="mb-2"><label class="form-label">Halaman</label>
+          <input type="number" class="form-control" id="quote-page" min="0"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="saveQuote()"><i class="bi bi-check-lg me-1"></i>Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reminder -->
+<div class="modal fade" id="modal-reminder" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="modal-reminder-title">Tambah Reminder</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="reminder-id"/>
+        <div class="mb-3"><label class="form-label">Judul *</label>
+          <input type="text" class="form-control" id="reminder-title"/></div>
+        <div class="row g-2 mb-3">
+          <div class="col-7"><label class="form-label">Tanggal *</label>
+            <input type="date" class="form-control" id="reminder-date"/></div>
+          <div class="col-5"><label class="form-label">Waktu</label>
+            <input type="time" class="form-control" id="reminder-time"/></div>
+        </div>
+        <div class="mb-3"><label class="form-label">Tipe</label>
+          <select class="form-select" id="reminder-type">
+            <option value="once">Sekali</option>
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+          </select></div>
+        <div class="mb-2"><label class="form-label">Catatan</label>
+          <input type="text" class="form-control" id="reminder-note"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="saveReminder()"><i class="bi bi-check-lg me-1"></i>Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Al-Quran -->
+<div class="modal fade" id="modal-quran" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">🌙 Pilih Ayat Al-Qur'an</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-2 mb-3">
+          <div class="col-5"><label class="form-label">Surah</label>
+            <select class="form-select" id="quran-surah" onchange="loadAyat()"><option value="">Pilih...</option></select></div>
+          <div class="col-4"><label class="form-label">Ayat</label>
+            <select class="form-select" id="quran-ayat"></select></div>
+          <div class="col-3 d-flex align-items-end">
+            <button class="btn-accent w-100" style="padding:.55rem" onclick="previewAyat()">Lihat</button></div>
+        </div>
+        <div id="quran-preview" class="d-none"></div>
+        <div id="quran-loading" class="text-center py-3 d-none"><div class="spinner-border spinner-border-sm"></div></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="insertAyat()"><i class="bi bi-plus me-1"></i>Masukkan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Hadits -->
+<div class="modal fade" id="modal-hadith" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">📖 Pilih Hadits</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-2 mb-3">
+          <div class="col-6"><label class="form-label">Kitab</label>
+            <select class="form-select" id="hadith-book">
+              <option value="abu-dawud">Abu Dawud</option><option value="bukhari">Bukhari</option>
+              <option value="muslim">Muslim</option><option value="tirmidzi">Tirmidzi</option>
+              <option value="ibnu-majah">Ibnu Majah</option><option value="nasai">Nasa'i</option>
+            </select></div>
+          <div class="col-4"><label class="form-label">No.</label>
+            <input type="number" class="form-control" id="hadith-num" placeholder="1" min="1"/></div>
+          <div class="col-2 d-flex align-items-end">
+            <button class="btn-accent w-100" style="padding:.55rem" onclick="previewHadith()">→</button></div>
+        </div>
+        <div id="hadith-preview" class="d-none"></div>
+        <div id="hadith-loading" class="text-center py-3 d-none"><div class="spinner-border spinner-border-sm"></div></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="insertHadith()"><i class="bi bi-plus me-1"></i>Masukkan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Pomodoro Timer -->
+<div class="modal fade" id="modal-pomodoro" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">🍅 Reading Timer</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+
+        <!-- Phase label -->
+        <div id="pomo-phase" style="font-size:.82rem;font-weight:700;color:var(--accent);margin-bottom:.75rem">
+          🍅 Fokus Membaca
+        </div>
+
+        <!-- SVG Ring Timer -->
+        <div style="position:relative;width:160px;height:160px;margin:0 auto 1.25rem">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <!-- Track -->
+            <circle cx="80" cy="80" r="54" fill="none"
+              stroke="var(--bg-3)" stroke-width="10"
+              transform="rotate(-90 80 80)"/>
+            <!-- Fill -->
+            <circle id="pomo-ring-fill" cx="80" cy="80" r="54" fill="none"
+              stroke="var(--accent)" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="339.3" stroke-dashoffset="0"
+              transform="rotate(-90 80 80)"
+              style="transition:stroke-dashoffset .5s linear, stroke .3s"/>
+          </svg>
+          <!-- Time display -->
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <div id="pomo-time" style="font-size:2.5rem;font-weight:800;font-family:'Plus Jakarta Sans',sans-serif;line-height:1;color:var(--text)">25:00</div>
+            <div id="pomo-status" style="font-size:.72rem;color:var(--text-3);margin-top:.25rem">Siap memulai</div>
+          </div>
+        </div>
+
+        <!-- Pomodoro counter -->
+        <div id="pomo-count" style="font-size:1.2rem;min-height:1.5rem;margin-bottom:.75rem">—</div>
+
+        <!-- Controls -->
+        <div class="d-flex justify-content-center gap-2 mb-3">
+          <button class="btn-ghost" onclick="resetTimer()" style="padding:.5rem .8rem">
+            <i class="bi bi-skip-backward-fill"></i>
+          </button>
+          <button class="btn-accent" id="pomo-btn-start" onclick="startTimer()" style="padding:.5rem 1.5rem">
+            <i class="bi bi-play-fill me-1"></i>Mulai
+          </button>
+          <button class="btn-accent d-none" id="pomo-btn-pause" onclick="pauseTimer()" style="padding:.5rem 1.5rem">
+            <i class="bi bi-pause-fill me-1"></i>Jeda
+          </button>
+          <button class="btn-ghost" onclick="skipPhase()" style="padding:.5rem .8rem">
+            <i class="bi bi-skip-forward-fill"></i>
+          </button>
+        </div>
+
+        <!-- Book & pages input -->
+        <div class="row g-2 text-start">
+          <div class="col-7">
+            <label class="form-label">Buku yang dibaca</label>
+            <select class="form-select form-select-sm" id="pomo-book-select"></select>
+          </div>
+          <div class="col-5">
+            <label class="form-label">Halaman dibaca</label>
+            <input type="number" class="form-control form-control-sm" id="pomo-pages"
+              placeholder="0" min="0" style="text-align:center"/>
+          </div>
+        </div>
+
+        <!-- Tip -->
+        <div style="font-size:.72rem;color:var(--text-3);margin-top:.75rem;background:var(--bg-3);padding:.5rem;border-radius:var(--radius-sm)">
+          💡 Isi jumlah halaman saat sesi selesai untuk auto-log progress
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button class="btn-ghost" style="font-size:.78rem" onclick="requestNotificationPermission()">
+          <i class="bi bi-bell me-1"></i>Aktifkan Notif
+        </button>
+        <button class="btn-ghost" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Daily Check-in -->
+<div class="modal fade" id="modal-checkin" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📅 Daily Check-in</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="checkin-mood-val" value="3"/>
+
+        <div class="mb-3 text-center">
+          <label class="form-label d-block text-start">Bagaimana sesi baca hari ini?</label>
+          <div class="d-flex justify-content-center gap-2 mt-1" id="checkin-mood"></div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Halaman yang sudah dibaca hari ini</label>
+          <input type="number" class="form-control" id="checkin-pages" placeholder="0" min="0"/>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Catatan singkat (opsional)</label>
+          <input type="text" class="form-control" id="checkin-note"
+            placeholder="Insight hari ini, kutipan, atau perasaan..."/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="submitCheckin()">
+          <i class="bi bi-check-lg me-1"></i>Check-in
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Reading Schedule -->
+<div class="modal fade" id="modal-schedule" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">📅 Jadwal Baca</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="sched-book-id"/>
+        <input type="hidden" id="sched-target-date"/>
+        <input type="hidden" id="sched-daily-pages"/>
+        <div id="sched-result">
+          <div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Tutup</button>
+        <button class="btn-accent" onclick="saveSchedule()">
+          <i class="bi bi-check-lg me-1"></i>Simpan Jadwal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create User (Admin) -->
+<div class="modal fade" id="modal-create-user" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">👤 Tambah User Baru</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2"><label class="form-label">Nama Tampilan *</label>
+          <input type="text" class="form-control" id="cu-display-name" placeholder="Nama lengkap"/></div>
+        <div class="mb-2"><label class="form-label">Username *</label>
+          <input type="text" class="form-control" id="cu-username" placeholder="Username unik"/></div>
+        <div class="mb-2"><label class="form-label">Email</label>
+          <input type="email" class="form-control" id="cu-email" placeholder="Opsional"/></div>
+        <div class="mb-2"><label class="form-label">Password *</label>
+          <input type="password" class="form-control" id="cu-password" placeholder="Min. 6 karakter"/></div>
+        <div class="mb-2"><label class="form-label">Role</label>
+          <select class="form-select" id="cu-role">
+            <option value="member">Member</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" data-bs-dismiss="modal">Batal</button>
+        <button class="btn-accent" onclick="createUser()">
+          <i class="bi bi-check-lg me-1"></i>Buat User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="assets/js/timer.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/books.js"></script>
+<script src="assets/js/notes.js"></script>
+<script src="assets/js/quotes.js"></script>
+<script src="assets/js/calendar.js"></script>
+<script src="assets/js/leaderboard.js"></script>
+<script src="assets/js/report.js"></script>
+<script src="assets/js/ai.js"></script>
+<script src="assets/js/settings.js"></script>
+<script src="assets/js/schedule.js"></script>
+<script src="assets/js/export.js"></script>
+</body>
+</html>
