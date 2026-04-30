@@ -249,3 +249,19 @@ CREATE INDEX idx_rems_user     ON reminders(user_id, reminder_date);
 CREATE INDEX idx_logs_user     ON reading_logs(user_id, logged_date);
 CREATE INDEX idx_logs_book     ON reading_logs(book_id);
 CREATE INDEX idx_badges_user   ON badges(user_id);
+
+-- Sesi 12: Shared Notes
+CREATE TABLE IF NOT EXISTS shared_notes (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  note_id    INT UNSIGNED NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  token      VARCHAR(64) NOT NULL UNIQUE,
+  title      VARCHAR(200) DEFAULT '',
+  expires_at DATETIME DEFAULT NULL,
+  view_count INT UNSIGNED DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_token (token),
+  KEY idx_user  (user_id),
+  CONSTRAINT fk_share_note FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_share_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -74,6 +74,9 @@
         </div>
       </div>
 
+      <!-- Discover Widget -->
+      <div id="discover-widget" class="mb-3"></div>
+
       <!-- Pomodoro + Check-in widget -->
       <div class="card p-3 mb-3">
         <div class="d-flex align-items-center justify-content-between mb-2">
@@ -246,6 +249,7 @@
 
       <!-- Progress -->
       <div id="panel-progress">
+        <!-- Level card -->
         <div class="card p-3 mb-3">
           <div class="d-flex align-items-center gap-3">
             <div id="level-ring" class="ring-wrap"></div>
@@ -256,8 +260,47 @@
             </div>
           </div>
         </div>
-        <span class="section-header">Target Progress</span>
-        <div id="target-progress-list"></div>
+
+        <!-- Target Progress -->
+        <span class="section-header">🎯 Target Progress</span>
+        <div id="target-progress-list" class="mb-3"></div>
+
+        <!-- Reading Personality -->
+        <span class="section-header">🧠 Reading Personality</span>
+        <div id="personality-wrap" class="mb-3">
+          <div class="text-center py-2">
+            <button class="btn-ghost" style="font-size:.82rem" onclick="loadReadingPersonality()">
+              <i class="bi bi-stars me-1"></i>Analisis Kepribadian Bacaku
+            </button>
+          </div>
+        </div>
+
+        <!-- Mini Streak Calendar -->
+        <div id="mini-calendar-wrap" class="card p-3 mb-3">
+          <div class="text-center py-1">
+            <button class="btn-ghost" style="font-size:.78rem" onclick="loadMiniCalendar()">
+              <i class="bi bi-calendar3 me-1"></i>Muat Kalender Aktivitas
+            </button>
+          </div>
+        </div>
+
+        <!-- Deep Insights -->
+        <span class="section-header">💡 Insight Bacaan</span>
+        <div class="card p-3 mb-3" id="insights-wrap">
+          <div class="text-center py-1">
+            <button class="btn-ghost" style="font-size:.78rem" onclick="loadInsights()">
+              <i class="bi bi-graph-up me-1"></i>Muat Insight
+            </button>
+          </div>
+        </div>
+
+        <!-- Compare Books -->
+        <div class="mb-3">
+          <button class="btn-ghost w-100" style="font-size:.82rem;padding:.55rem"
+            onclick="openCompareModal()">
+            <i class="bi bi-intersect me-1"></i>Bandingkan 2 Buku
+          </button>
+        </div>
       </div>
 
       <!-- Badges -->
@@ -353,6 +396,26 @@
   </div>
 
   <!-- ══ SETTINGS ══ -->
+  <!-- ══ DISCOVER ══ -->
+  <div id="page-discover" class="page px-3">
+    <div class="stagger">
+      <!-- Header -->
+      <div class="d-flex align-items-center justify-content-between mb-3 pt-1">
+        <div>
+          <div style="font-size:1.5rem;font-weight:800">✨ Discover</div>
+          <div style="font-size:.72rem;color:var(--text-3)">Konten dipersonalisasi berdasarkan minatmu</div>
+        </div>
+        <button class="btn-icon" onclick="loadDiscover(true)" title="Refresh semua konten">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+
+      <!-- Content area -->
+      <div class="discover-content"></div>
+    </div>
+  </div>
+
+  <!-- ══ SETELAN ══ -->
   <div id="page-settings" class="page px-3">
     <div class="stagger">
       <div style="font-size:1.5rem;font-weight:800;margin-bottom:1rem;padding-top:.25rem">Setelan</div>
@@ -586,15 +649,19 @@
     <i class="bi bi-book-fill"></i><span>Buku</span></button>
   <button class="nav-item" data-page="notes" onclick="navigateTo('notes')">
     <i class="bi bi-journal-richtext"></i><span>Catatan</span></button>
+  <button class="nav-item" data-page="discover" onclick="navigateTo('discover')">
+    <i class="bi bi-stars"></i><span>Discover</span></button>
   <button class="nav-item" data-page="level" onclick="navigateTo('level')">
     <i class="bi bi-trophy-fill"></i><span>Level</span></button>
   <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
     <i class="bi bi-gear-fill"></i><span>Setelan</span></button>
 </nav>
 
-<button class="fab d-none" id="fab" onclick="fabAction()">
+<button class="fab d-none" id="fab">
   <i class="bi bi-plus-lg" id="fab-icon"></i>
 </button>
+<!-- FAB Speed Dial -->
+<div id="fab-dial" class="d-none"></div>
 <div id="toast-container"></div>
 
 <!-- ══ MODALS ══ -->
@@ -671,6 +738,11 @@
           style="color:var(--blue);border-color:var(--blue)">
           <i class="bi bi-calendar-range me-1"></i>Jadwal
         </button>
+        <button class="btn-ghost" id="btn-ai-chat"
+          onclick="openAIChatFromDetail()"
+          style="color:var(--green);border-color:var(--green)">
+          <i class="bi bi-chat-dots me-1"></i>Tanya AI
+        </button>
         <button class="btn-ghost" id="btn-ai-summary"
           onclick="aiSummaryFromDetail()"
           style="color:var(--accent);border-color:var(--accent)">
@@ -709,7 +781,10 @@
             <input type="number" class="form-control" id="note-page-end" min="0"/></div>
         </div>
         <div class="mb-3"><label class="form-label">Tag</label>
-          <input type="text" class="form-control" id="note-tags" placeholder="islami, motivasi (pisah koma)"/></div>
+          <input type="text" class="form-control" id="note-tags"
+            placeholder="islami, motivasi (pisah koma)"
+            oninput="triggerAutotag()"/>
+          <div id="tag-suggestions" class="d-none mt-1"></div></div>
         <div class="d-flex gap-2 mb-2">
           <button type="button" class="btn-ghost" style="font-size:.8rem;padding:.4rem .75rem" onclick="openQuranPicker()">🌙 Al-Qur'an</button>
           <button type="button" class="btn-ghost" style="font-size:.8rem;padding:.4rem .75rem" onclick="openHadithPicker()">📖 Hadits</button>
@@ -758,6 +833,9 @@
           </button>
           <button class="btn-icon" id="btn-fontsize" onclick="toggleFontSize()" title="Perbesar teks">
             <i class="bi bi-text-paragraph"></i>
+          </button>
+          <button class="btn-icon" onclick="openShareModal()" title="Bagikan catatan ini">
+            <i class="bi bi-share-fill" style="color:var(--accent)"></i>
           </button>
           <button class="btn-icon" onclick="printNote()" title="Print / Export PDF">
             <i class="bi bi-printer"></i>
@@ -1085,6 +1163,54 @@
   </div>
 </div>
 
+<!-- Modal: AI Chat per Buku -->
+<div class="modal fade" id="modal-ai-chat" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="height:90vh;display:flex;flex-direction:column">
+      <div class="modal-header" style="flex-shrink:0">
+        <div>
+          <h5 class="modal-title">🤖 Tanya AI</h5>
+          <div style="font-size:.72rem;color:var(--text-3)" id="chat-book-title">—</div>
+        </div>
+        <div class="d-flex gap-1 ms-auto">
+          <button class="btn-icon" onclick="clearChat()" title="Reset chat">
+            <i class="bi bi-arrow-counterclockwise" style="font-size:.85rem"></i>
+          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+      </div>
+
+      <!-- Chat messages -->
+      <div id="chat-messages" class="flex-grow-1 overflow-y-auto p-3"
+        style="display:flex;flex-direction:column;gap:.75rem;overflow-y:auto"></div>
+
+      <!-- Input area -->
+      <div class="p-3 pt-2" style="border-top:1px solid var(--border);flex-shrink:0">
+        <!-- Quick questions -->
+        <div class="d-flex gap-1 flex-wrap mb-2" id="chat-quick-btns">
+          <button class="chip" data-q="Apa pelajaran utama?" style="font-size:.75rem;padding:.3rem .65rem"
+            onclick="setChatQ(this.dataset.q)">💡 Pelajaran utama?</button>
+          <button class="chip" data-q="Bagaimana cara menerapkannya?" style="font-size:.75rem;padding:.3rem .65rem"
+            onclick="setChatQ(this.dataset.q)">🎯 Cara menerapkan?</button>
+          <button class="chip" data-q="Apa yang paling unik dari buku ini?" style="font-size:.75rem;padding:.3rem .65rem"
+            onclick="setChatQ(this.dataset.q)">✨ Yang unik?</button>
+        </div>
+        <div class="d-flex gap-2">
+          <textarea id="chat-input" rows="2"
+            class="form-control" style="resize:none;font-size:.88rem"
+            placeholder="Tanya apa saja tentang buku ini..."
+            onkeydown="chatKeyDown(event)"></textarea>
+          <button id="btn-chat-send" class="btn-accent flex-shrink-0"
+            style="padding:.5rem .75rem;align-self:flex-end"
+            onclick="sendChatMessage()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
@@ -1100,6 +1226,10 @@
 <script src="assets/js/ai.js"></script>
 <script src="assets/js/settings.js"></script>
 <script src="assets/js/schedule.js"></script>
+<script src="assets/js/discover.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/share.js"></script>
+<script src="assets/js/onboarding.js"></script>
 <script src="assets/js/export.js"></script>
 </body>
 </html>

@@ -162,6 +162,7 @@ function navigateTo(page) {
     case 'home':     loadDashboard();   break;
     case 'books':    loadBooks();       break;
     case 'notes':    loadNotes();       break;
+    case 'discover': loadDiscover();    break;
     case 'level':    loadLeaderboard(); break;
     case 'settings': loadSettings();    break;
   }
@@ -170,12 +171,12 @@ function navigateTo(page) {
 function updateFab(page) {
   const fab = document.getElementById('fab');
   if (!fab) return;
-  if (['books','notes'].includes(page)) {
+  if (['home','books','notes'].includes(page)) {
     fab.classList.remove('d-none');
   } else {
     fab.classList.add('d-none');
-  }
-}
+    closeFabDial();
+  }}
 
 function updateTopbarExtra(page) {
   const el = document.getElementById('topbar-extra');
@@ -183,19 +184,106 @@ function updateTopbarExtra(page) {
   el.innerHTML = '';
 }
 
-function fabAction() {
-  if (App.currentPage === 'books') {
-    openBookModal();
-    return;
-  }
-  if (App.currentPage === 'notes') {
-    // Check which sub-tab is active
-    const quotesPanel = document.getElementById('panel-quotes');
-    const quotesActive = quotesPanel && !quotesPanel.classList.contains('d-none');
-    if (quotesActive) openQuoteModal();
-    else openNoteModal();
+// ── FAB Speed Dial ────────────────────────────
+let _fabDialOpen = false;
+let _fabLongPress = null;
+let _fabPressStart = 0;
+
+function initFab() {
+  const fab = document.getElementById('fab');
+  if (!fab) return;
+
+  // Mobile: touch hold → speed dial
+  fab.addEventListener('touchstart', () => {
+    _fabPressStart = Date.now();
+    _fabLongPress  = setTimeout(() => openFabDial(), 400);
+  }, { passive: true });
+
+  fab.addEventListener('touchend', () => {
+    clearTimeout(_fabLongPress);
+    if (!_fabDialOpen) {
+      const held = Date.now() - _fabPressStart;
+      if (held < 400) fabAction();
+    }
+  });
+
+  // Desktop: right-click → dial
+  fab.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    openFabDial();
+  });
+
+  // Close dial on outside tap
+  document.addEventListener('click', (e) => {
+    if (_fabDialOpen && !e.target.closest('#fab-dial') && !e.target.closest('#fab')) {
+      closeFabDial();
+    }
+  });
+}
+
+function openFabDial() {
+  _fabDialOpen = true;
+  const dial = document.getElementById('fab-dial');
+  if (!dial) return;
+
+  const items = [
+    { icon:'bi-book-fill',       label:'Buku Baru',    action:"openBookModal();closeFabDial()",     c:'#3B82F6' },
+    { icon:'bi-journal-text',    label:'Catatan',      action:"openNoteModal();closeFabDial()",     c:'#22C55E' },
+    { icon:'bi-chat-quote-fill', label:'Kutipan',      action:"_dialQuote();closeFabDial()",        c:'var(--accent)' },
+    { icon:'bi-bell-fill',       label:'Reminder',     action:"openReminderModal(0);closeFabDial()",c:'#EF4444' },
+  ];
+
+  dial.innerHTML = items.map((item, i) => `
+    <div class="fab-dial-item" onclick="${item.action}"
+      style="animation:fabDialIn .18s ease ${i * .06}s both">
+      <span class="fab-dial-label">${item.label}</span>
+      <button class="fab-dial-btn" style="background:${item.c}">
+        <i class="bi ${item.icon}"></i>
+      </button>
+    </div>`).join('');
+
+  dial.classList.remove('d-none');
+  setTimeout(() => dial.classList.add('fab-dial-open'), 10);
+
+  const fab = document.getElementById('fab');
+  if (fab) { fab.style.transform = 'rotate(45deg)'; fab.style.background = 'var(--text-2)'; }
+}
+
+function closeFabDial() {
+  _fabDialOpen = false;
+  const dial = document.getElementById('fab-dial');
+  if (dial) { dial.classList.add('d-none'); dial.classList.remove('fab-dial-open'); }
+  const fab = document.getElementById('fab');
+  if (fab) { fab.style.transform = ''; fab.style.background = ''; }
+}
+
+function _dialQuote() {
+  // Navigate to notes → quotes tab first
+  if (App.currentPage !== 'notes') {
+    navigateTo('notes');
+    setTimeout(() => {
+      const quotesTab = document.querySelector('#notes-tabs .nav-link:last-child');
+      if (quotesTab) quotesTab.click();
+      setTimeout(() => openQuoteModal(), 200);
+    }, 300);
+  } else {
+    openQuoteModal();
   }
 }
+
+function fabAction() {
+  if (_fabDialOpen) { closeFabDial(); return; }
+  if (App.currentPage === 'books') { openBookModal(); return; }
+  if (App.currentPage === 'notes') {
+    const quotesPanel   = document.getElementById('panel-quotes');
+    const quotesActive  = quotesPanel && !quotesPanel.classList.contains('d-none');
+    if (quotesActive) openQuoteModal(); else openNoteModal();
+    return;
+  }
+  // Home & others → speed dial
+  openFabDial();
+}
+
 
 // ── Auth ──────────────────────────────────────
 async function checkAuth() {
@@ -349,6 +437,8 @@ async function loadDashboard() {
   loadQuoteOfDay();
   loadScheduleWidget();
   loadReviewQueue();
+  // Discover widget
+  loadDiscoverWidget();
 }
 
 async function toggleReminderDone(id) {
@@ -385,6 +475,9 @@ async function init() {
   const rm = document.getElementById('report-month');
   if (rm) rm.value = new Date().toISOString().slice(0,7);
 
+  initFab();
+  initReadingMode();
+  setTimeout(() => checkOnboarding(), 1200);
   setTimeout(() => updateNavIndicator('home'), 150);
 }
 

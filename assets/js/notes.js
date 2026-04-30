@@ -44,11 +44,33 @@ async function loadNotes() {
 function _renderNotes(notes) {
   const list = document.getElementById('notes-list');
   if (!notes.length) {
-    list.innerHTML = `
+    const activeTag = App.activeNoteTag;
+    list.innerHTML = activeTag ? `
       <div class="empty-state">
-        <div class="empty-icon">📝</div>
+        <div class="empty-icon">🏷️</div>
+        <div class="empty-title">Tidak ada catatan dengan tag ini</div>
+        <div class="empty-desc">Belum ada catatan bertag <b>#${esc(activeTag)}</b></div>
+        <button class="btn-ghost mt-2" style="font-size:.82rem" onclick="filterByTag('')">
+          <i class="bi bi-x-circle me-1"></i>Hapus filter tag
+        </button>
+      </div>` : `
+      <div class="empty-state">
+        <div class="empty-icon">✍️</div>
         <div class="empty-title">Belum ada catatan</div>
-        <div class="empty-desc">Tambah catatan pertamamu dari buku yang sedang dibaca</div>
+        <div class="empty-desc">Catat hal menarik, kutipan, atau insight dari buku yang kamu baca</div>
+        <div class="d-flex flex-column gap-2 mt-3" style="max-width:240px;margin:0 auto">
+          <button class="btn-accent" onclick="openNoteModal()">
+            <i class="bi bi-plus-lg me-1"></i>Buat Catatan Pertama
+          </button>
+          <button class="btn-ghost" style="font-size:.82rem"
+            onclick="navigateTo('books')">
+            <i class="bi bi-book me-1"></i>Lihat Koleksi Buku
+          </button>
+        </div>
+        <div style="margin-top:1.25rem;font-size:.75rem;color:var(--text-3);
+          background:var(--bg-3);padding:.6rem .9rem;border-radius:var(--radius-sm)">
+          💡 Tips: Kamu bisa insert Ayat Al-Qur'an dan Hadits langsung di editor catatan!
+        </div>
       </div>`;
     return;
   }

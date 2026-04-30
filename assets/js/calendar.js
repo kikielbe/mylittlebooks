@@ -17,6 +17,7 @@ function switchLevelTab(tab, el) {
     if (panel) panel.classList.toggle('d-none', p !== tab);
   });
 
+  if (tab === 'progress') { loadAnalyticsPanel(); }
   if (tab === 'streak')   { loadHeatmap(); }   // load heatmap dari timer.js
   if (tab === 'calendar') {
     _calYear  = new Date().getFullYear();

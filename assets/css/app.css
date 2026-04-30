@@ -737,3 +737,257 @@ body {
   }
   .heatmap-stat .num { font-size: 1rem; }
 }
+
+/* ── FAB Speed Dial ─────────────────────────── */
+#fab {
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1), background .2s;
+}
+
+#fab-dial {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 1rem + 56px);
+  right: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .6rem;
+  z-index: 199;
+}
+
+.fab-dial-item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  cursor: pointer;
+}
+
+.fab-dial-label {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .3rem .65rem;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  white-space: nowrap;
+}
+
+.fab-dial-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+  flex-shrink: 0;
+  transition: transform .15s;
+}
+.fab-dial-btn:active { transform: scale(.9); }
+
+@keyframes fabDialIn {
+  from { opacity: 0; transform: translateY(12px) scale(.85); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes fabPulse {
+  0%,100% { transform: scale(1); box-shadow: 0 6px 20px rgba(245,166,35,.4); }
+  50%      { transform: scale(1.12); box-shadow: 0 8px 28px rgba(245,166,35,.6); }
+}
+
+/* ── Onboarding popup style ──────────────────── */
+.onboard-popup {
+  border-radius: 24px !important;
+  padding: 1.75rem 1.5rem !important;
+  max-width: 340px !important;
+}
+
+/* ── Actionable empty state ──────────────────── */
+.empty-state .btn-accent,
+.empty-state .btn-ghost {
+  font-size: .85rem;
+  padding: .55rem 1.25rem;
+}
+
+/* ── AI Chat Bubbles ─────────────────────────── */
+/* ── Chat Interface ──────────────────────────── */
+#chat-messages {
+  padding: .75rem !important;
+  gap: .6rem !important;
+}
+
+.chat-bubble {
+  display: flex;
+  align-items: flex-end;
+  gap: .5rem;
+  max-width: 84%;
+  animation: staggerIn .2s ease;
+}
+
+/* AI bubble — kiri */
+.chat-bubble.ai {
+  align-self: flex-start;
+}
+
+/* USER bubble — kanan */
+.chat-bubble.user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+  max-width: 78%;
+}
+
+/* Avatar AI */
+.chat-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-bg), var(--bg-3));
+  border: 1.5px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; flex-shrink: 0;
+  margin-bottom: 2px;
+}
+
+/* AI bubble text — abu soft */
+.chat-text {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 4px 18px 18px 18px;
+  padding: .65rem .9rem;
+  font-size: .875rem;
+  line-height: 1.65;
+  color: var(--text);
+  max-width: 100%;
+  word-break: break-word;
+}
+
+/* USER bubble text — amber solid */
+.chat-bubble.user .chat-text {
+  background: var(--accent);
+  border: none;
+  border-radius: 18px 4px 18px 18px;
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(245,166,35,.35);
+}
+
+.chat-bubble.user .user-text {
+  color: #fff;
+  font-weight: 500;
+}
+
+/* AI text formatting */
+.chat-text strong { color: var(--accent-d); font-weight: 700; }
+.chat-bubble.user .chat-text strong { color: #fff; font-weight: 700; }
+
+/* Time label below bubble */
+.chat-time {
+  font-size: .6rem;
+  color: var(--text-3);
+  margin-top: 2px;
+  padding: 0 .3rem;
+  align-self: flex-end;
+}
+.chat-bubble.user .chat-time { text-align: right; }
+
+/* Typing indicator */
+.typing-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  background: var(--text-3);
+  border-radius: 50%;
+  margin: 0 2px;
+  animation: typingBounce 1.1s ease infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes typingBounce {
+  0%,60%,100% { transform: translateY(0); opacity:.6; }
+  30%          { transform: translateY(-7px); opacity:1; }
+}
+
+/* Tag suggestions */
+#tag-suggestions {
+  background: var(--bg-3);
+  border-radius: var(--radius-sm);
+  padding: .5rem .6rem;
+}
+
+/* ── Dark Mode Bootstrap Overrides ──────────── */
+[data-theme="dark"] .card {
+  background: var(--bg-2) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--bg-2) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+  background: var(--bg-3) !important;
+  border-color: var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .form-control::placeholder {
+  color: var(--text-3) !important;
+}
+
+[data-theme="dark"] .form-control:focus,
+[data-theme="dark"] .form-select:focus {
+  background: var(--bg-3) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px rgba(245,166,35,.2) !important;
+}
+
+/* Bootstrap text-muted override for dark mode */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .text-secondary {
+  color: var(--text-3) !important;
+}
+
+/* Swal2 dark mode */
+[data-theme="dark"] .swal2-popup {
+  background: var(--bg-2) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .swal2-title,
+[data-theme="dark"] .swal2-html-container {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .swal2-input,
+[data-theme="dark"] .swal2-select,
+[data-theme="dark"] .swal2-textarea {
+  background: var(--bg-3) !important;
+  border-color: var(--border-2) !important;
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .swal2-validation-message {
+  background: var(--red-bg) !important;
+  color: var(--red) !important;
+}
+
+/* Progress bar dark mode */
+[data-theme="dark"] .progress {
+  background: var(--bg-3) !important;
+}
+
+/* fw-bold in card dark mode */
+[data-theme="dark"] .fw-bold,
+[data-theme="dark"] .fw-semibold {
+  color: var(--text) !important;
+}
+
+/* Badge/chip dark mode */
+[data-theme="dark"] .badge-status {
+  border: 1px solid var(--border-2);
+}

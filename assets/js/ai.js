@@ -440,3 +440,252 @@ function _escPrint(s) {
   d.textContent = s || '';
   return d.innerHTML;
 }
+
+// ════════════════════════════════════════════════
+// AI CHAT PER BUKU
+// ════════════════════════════════════════════════
+let _chatHistory   = [];   // [{role, content}]
+let _chatBookId    = 0;
+let _chatBookTitle = '';
+
+async function openAIChatModal(bookId, bookTitle) {
+  _chatBookId    = bookId || App.currentBookId || 0;
+  _chatHistory   = [];
+  _chatBookTitle = bookTitle || 'Buku';
+
+  // Close book detail modal first
+  bootstrap.Modal.getInstance(document.getElementById('modal-book-detail'))?.hide();
+
+  setTimeout(() => {
+    const modal = document.getElementById('modal-ai-chat');
+    if (!modal) return;
+
+    document.getElementById('chat-book-title').textContent = _chatBookTitle;
+    document.getElementById('chat-messages').innerHTML = `
+      <div class="chat-bubble ai">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="chat-text">
+            Halo! Aku siap membantu kamu memahami <b>${esc(_chatBookTitle)}</b> lebih dalam.<br><br>
+            Kamu bisa tanya:<br>
+            • Koneksi antar konsep<br>
+            • Cara menerapkan insight<br>
+            • Perbandingan dengan buku lain<br><br>
+            Mulai dengan pertanyaan apa? 😊
+          </div>
+          <div class="chat-time">Sekarang</div>
+        </div>
+      </div>`;
+    document.getElementById('chat-input').value = '';
+
+    new bootstrap.Modal(modal).show();
+    setTimeout(() => document.getElementById('chat-input')?.focus(), 300);
+  }, 350);
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const question = input?.value.trim();
+  if (!question) return;
+
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('btn-chat-send')?.setAttribute('disabled', '');
+  // Reset chip highlight
+  document.querySelectorAll('#chat-quick-btns .chip').forEach(b => b.classList.remove('active'));
+
+  // Append user bubble
+  _appendChatBubble('user', question);
+
+  // Typing indicator
+  const typingId = 'typing-' + Date.now();
+  _appendChatBubble('typing', '...', typingId);
+
+  try {
+    const res = await apiPost('api/ai.php', {
+      type:     'chat',
+      book_id:  _chatBookId,
+      question,
+      history:  _chatHistory,
+    });
+
+    // Remove typing
+    document.getElementById(typingId)?.remove();
+
+    if (!res.success) throw new Error(res.error || 'AI tidak tersedia');
+
+    const answer = res.data?.answer || '';
+    _appendChatBubble('ai', _formatAIText(answer));
+
+    // Update history
+    _chatHistory.push({ role: 'user',      content: question });
+    _chatHistory.push({ role: 'assistant', content: answer   });
+    if (_chatHistory.length > 12) _chatHistory = _chatHistory.slice(-12);
+
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    _appendChatBubble('ai', `😔 ${esc(e.message || 'Gagal mendapat respons')}`);
+  }
+
+  input.disabled = false;
+  document.getElementById('btn-chat-send')?.removeAttribute('disabled');
+  input.focus();
+}
+
+function _appendChatBubble(role, content, id = '') {
+  const wrap = document.getElementById('chat-messages');
+  if (!wrap) return;
+
+  const now  = new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+  const div  = document.createElement('div');
+  div.className = `chat-bubble ${role}`;
+  if (id) div.id = id;
+
+  if (role === 'user') {
+    div.innerHTML = `
+      <div>
+        <div class="chat-text"><span class="user-text">${esc(content)}</span></div>
+        <div class="chat-time">${now}</div>
+      </div>`;
+  } else if (role === 'typing') {
+    div.innerHTML = `
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-text" style="padding:.5rem .75rem">
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      </div>`;
+  } else {
+    // AI bubble
+    div.innerHTML = `
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <div class="chat-text">${content}</div>
+        <div class="chat-time">${now}</div>
+      </div>`;
+  }
+
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function _formatAIText(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^#{1,3}\s(.+)/gm, '<strong style="color:var(--accent)">$1</strong>')
+    .replace(/^[-•]\s(.+)/gm, '• $1')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function chatKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+}
+
+function clearChat() {
+  _chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="chat-bubble ai">
+      <div class="chat-avatar">🤖</div>
+      <div>
+        <div class="chat-text">Chat direset. Ada yang ingin kamu tanyakan tentang <b>${esc(_chatBookTitle)}</b>? 😊</div>
+        <div class="chat-time">Sekarang</div>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════
+// AUTO-TAG — suggest tags untuk catatan
+// ════════════════════════════════════════════════
+let _autotagTimer = null;
+
+async function triggerAutotag() {
+  clearTimeout(_autotagTimer);
+  _autotagTimer = setTimeout(async () => {
+    const title   = document.getElementById('note-title')?.value.trim();
+    const content = App.quill?.getText().trim() || '';
+
+    if (!title && content.length < 30) return;
+
+    // Get user's existing tags for context
+    const tagsRes = await apiGet('api/notes.php?action=tags');
+    const existing = tagsRes.success ? (tagsRes.data || []).slice(0, 20) : [];
+
+    try {
+      const res = await apiPost('api/ai.php', {
+        type:          'autotag',
+        title,
+        content:       App.quill?.root.innerHTML || '',
+        existing_tags: existing,
+      });
+
+      if (!res.success || !res.data?.tags?.length) return;
+
+      _showTagSuggestions(res.data.tags);
+    } catch {}
+  }, 1500);
+}
+
+function _showTagSuggestions(tags) {
+  const wrap = document.getElementById('tag-suggestions');
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <div style="font-size:.7rem;color:var(--text-3);margin-bottom:.3rem">
+      🤖 Saran tag AI:
+    </div>
+    <div class="d-flex flex-wrap gap-1">
+      ${tags.map(t => `
+        <button onclick="addSuggestedTag('${esc(t)}')"
+          style="background:var(--accent-bg);border:1px solid var(--accent);
+            color:var(--accent);border-radius:20px;padding:.15rem .55rem;
+            font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s"
+          onmouseover="this.style.background='var(--accent)';this.style.color='#fff'"
+          onmouseout="this.style.background='var(--accent-bg)';this.style.color='var(--accent)'">
+          + ${esc(t)}
+        </button>`).join('')}
+    </div>`;
+  wrap.classList.remove('d-none');
+}
+
+function addSuggestedTag(tag) {
+  const input = document.getElementById('note-tags');
+  if (!input) return;
+
+  const current = input.value.trim();
+  const tags    = current ? current.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+  if (!tags.includes(tag)) {
+    tags.push(tag);
+    input.value = tags.join(', ');
+  }
+
+  // Remove from suggestions
+  const wrap = document.getElementById('tag-suggestions');
+  if (wrap) {
+    const btns = wrap.querySelectorAll('button');
+    btns.forEach(btn => {
+      if (btn.textContent.trim() === `+ ${tag}`) btn.remove();
+    });
+    if (!wrap.querySelectorAll('button').length) wrap.classList.add('d-none');
+  }
+}
+
+// Helper untuk quick question buttons — isi input saja, tidak auto-kirim
+function setChatQ(q) {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  input.value = q;
+  input.focus();
+  // Geser cursor ke akhir
+  input.setSelectionRange(q.length, q.length);
+  // Highlight chip yang dipilih
+  document.querySelectorAll('#chat-quick-btns .chip').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === q ||
+      b.getAttribute('data-q') === q);
+  });
+}

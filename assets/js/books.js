@@ -32,12 +32,62 @@ function _renderBooks(books) {
     : books;
 
   if (!shown.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📚</div>
-        <h6>${query ? 'Tidak ditemukan' : 'Belum ada buku'}</h6>
-        <p>${query ? `Tidak ada hasil untuk "<b>${esc(query)}</b>"` : 'Tambah buku pertamamu!'}</p>
-      </div>`;
+    if (query) {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">Tidak ditemukan</div>
+          <div class="empty-desc">Tidak ada buku dengan kata "<b>${esc(query)}</b>"</div>
+          <button class="btn-ghost mt-2" style="font-size:.82rem"
+            onclick="document.getElementById('book-search').value='';_renderBooks(_allBooks)">
+            <i class="bi bi-x-circle me-1"></i>Hapus pencarian
+          </button>
+        </div>`;
+    } else {
+      list.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📚</div>
+          <div class="empty-title">Koleksi bukumu masih kosong</div>
+          <div class="empty-desc">Tambah buku pertamamu dan mulai perjalanan literasimu!</div>
+          <div class="d-flex flex-column gap-2 mt-3" style="max-width:260px;margin:0 auto">
+            <button class="btn-accent" onclick="openBookModal()">
+              <i class="bi bi-plus-lg me-1"></i>Tambah Buku Pertama
+            </button>
+            <button class="btn-ghost" style="font-size:.82rem" onclick="navigateTo('home');setTimeout(()=>loadAIRecommendations(true),300)">
+              <i class="bi bi-stars me-1"></i>Lihat Rekomendasi AI
+            </button>
+          </div>
+          <!-- Buku populer suggestion -->
+          <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);
+            width:100%;text-align:left">
+            <div style="font-size:.72rem;font-weight:700;color:var(--text-3);
+              text-transform:uppercase;letter-spacing:.05em;margin-bottom:.6rem">
+              📖 Buku populer untuk memulai
+            </div>
+            ${[
+              {t:'Atomic Habits',         a:'James Clear',    g:'self-help'},
+              {t:'Laskar Pelangi',        a:'Andrea Hirata',  g:'novel'},
+              {t:'Rich Dad Poor Dad',     a:'Robert Kiyosaki',g:'bisnis'},
+            ].map(b => `
+              <div class="d-flex align-items-center gap-2 mb-2 card-press p-2"
+                style="border-radius:var(--radius-sm);cursor:pointer"
+                onclick="quickAddBook('${esc(b.t)}','${esc(b.a)}','${esc(b.g)}')">
+                <div style="width:32px;height:44px;background:var(--accent-bg);
+                  border-radius:4px;display:flex;align-items:center;
+                  justify-content:center;flex-shrink:0;font-size:1rem">📗</div>
+                <div class="overflow-hidden flex-grow-1">
+                  <div style="font-size:.82rem;font-weight:700">${esc(b.t)}</div>
+                  <div style="font-size:.72rem;color:var(--text-3)">${esc(b.a)}</div>
+                </div>
+                <button class="btn-icon" style="width:30px;height:30px;flex-shrink:0;
+                  background:var(--accent-bg);border-color:var(--accent)"
+                  title="Tambah ke Ingin Baca">
+                  <i class="bi bi-plus-lg" style="font-size:.8rem;color:var(--accent)"></i>
+                </button>
+              </div>`).join('')}
+          </div>
+        </div>`;
+    }
     return;
   }
 
@@ -63,18 +113,18 @@ function _bookCard(b) {
               <div class="fw-semibold text-truncate flex-grow-1">${esc(b.title)}</div>
               <span class="badge-status ${statusMap[b.status]||'badge-want'} text-nowrap">${statusLbl[b.status]||b.status}</span>
             </div>
-            <div class="small text-muted text-truncate">${esc(b.author)||'Tanpa penulis'}</div>
-            ${b.genre ? `<div class="small text-muted">${esc(b.genre)}</div>` : ''}
+            <div style="font-size:.78rem;color:var(--text-3)" class="text-truncate">${esc(b.author)||'Tanpa penulis'}</div>
+            ${b.genre ? `<div style="font-size:.78rem;color:var(--text-3)">${esc(b.genre)}</div>` : ''}
 
             ${b.status === 'reading' && b.total_pages ? `
-              <div class="d-flex justify-content-between small text-muted mt-1">
+              <div class="d-flex justify-content-between mt-1" style="font-size:.75rem;color:var(--text-3)">
                 <span>Hal. ${b.current_page}/${b.total_pages}</span><span>${pct}%</span>
               </div>
               <div class="progress mt-1"><div class="progress-bar" style="width:${pct}%"></div></div>` : ''}
 
             <div class="d-flex align-items-center justify-content-between mt-1">
               <div>${renderStars(b.rating||0)}</div>
-              <div class="small text-muted">
+              <div style="font-size:.78rem;color:var(--text-3)">
                 ${b.note_count > 0 ? `<span class="me-2"><i class="bi bi-journal-text"></i> ${b.note_count}</span>` : ''}
                 ${b.quote_count > 0 ? `<span><i class="bi bi-chat-quote"></i> ${b.quote_count}</span>` : ''}
               </div>
@@ -245,7 +295,7 @@ async function openBookDetail(id) {
   new bootstrap.Modal(document.getElementById('modal-book-detail')).show();
 
   const res = await apiGet(`api/books.php?id=${id}`);
-  if (!res.success) { document.getElementById('book-detail-body').innerHTML = '<p class="text-muted text-center">Gagal memuat</p>'; return; }
+  if (!res.success) { document.getElementById('book-detail-body').innerHTML = '<p style="color:var(--text-3);text-align:center">Gagal memuat</p>'; return; }
 
   const b = res.data;
   const statusMap = { want:'badge-want', reading:'badge-reading', done:'badge-done', paused:'badge-paused' };
@@ -260,19 +310,19 @@ async function openBookDetail(id) {
         : `<div class="book-cover-placeholder book-cover-lg"><span style="font-size:2.5rem">📗</span></div>`}
       <div class="flex-grow-1">
         <h6 class="font-display mb-1">${esc(b.title)}</h6>
-        <div class="small text-muted mb-1">${esc(b.author)||'Tanpa penulis'}</div>
-        ${b.genre ? `<div class="small text-muted mb-1">${esc(b.genre)}</div>` : ''}
+        <div style="font-size:.8rem;color:var(--text-3);margin-bottom:.25rem">${esc(b.author)||'Tanpa penulis'}</div>
+        ${b.genre ? `<div style="font-size:.8rem;color:var(--text-3);margin-bottom:.25rem">${esc(b.genre)}</div>` : ''}
         <span class="badge-status ${statusMap[b.status]}">${statusLbl[b.status]}</span>
         <div class="mt-2">${renderStars(b.rating||0)}</div>
       </div>
     </div>
 
-    ${b.description ? `<p class="small text-muted mb-3">${esc(b.description)}</p>` : ''}
+    ${b.description ? `<p style="font-size:.82rem;color:var(--text-2);margin-bottom:.75rem">${esc(b.description)}</p>` : ''}
 
     <!-- Progress -->
     ${b.status === 'reading' || b.status === 'done' ? `
     <div class="mb-3">
-      <div class="d-flex justify-content-between small text-muted mb-1">
+      <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;color:var(--text-2)">
         <span>Progress Halaman</span>
         <span>${b.current_page}/${b.total_pages||'?'} (${pct}%)</span>
       </div>
@@ -287,7 +337,7 @@ async function openBookDetail(id) {
 
     <!-- Dates -->
     ${b.started_at || b.finished_at ? `
-    <div class="d-flex gap-3 small text-muted mb-3">
+    <div class="d-flex gap-3 mb-3" style="font-size:.78rem;color:var(--text-2)">
       ${b.started_at  ? `<div><i class="bi bi-calendar-check me-1"></i>Mulai: ${fmtDate(b.started_at)}</div>` : ''}
       ${b.finished_at ? `<div><i class="bi bi-calendar-x me-1"></i>Selesai: ${fmtDate(b.finished_at)}</div>` : ''}
     </div>` : ''}
@@ -296,20 +346,20 @@ async function openBookDetail(id) {
     <div class="row g-2 mb-3 text-center">
       <div class="col-4">
         <div class="card p-2">
-          <div class="fw-bold" style="color:var(--blue)">${b.note_count||0}</div>
-          <div class="small text-muted">Catatan</div>
+          <div class="fw-bold" style="color:var(--accent)">${b.note_count||0}</div>
+          <div style="font-size:.78rem;color:var(--text-3)">Catatan</div>
         </div>
       </div>
       <div class="col-4">
         <div class="card p-2">
-          <div class="fw-bold" style="color:var(--cyan)">${b.quote_count||0}</div>
-          <div class="small text-muted">Kutipan</div>
+          <div class="fw-bold" style="color:var(--green)">${b.quote_count||0}</div>
+          <div style="font-size:.78rem;color:var(--text-3)">Kutipan</div>
         </div>
       </div>
       <div class="col-4">
         <div class="card p-2">
-          <div class="fw-bold" style="color:var(--amber)">${b.total_pages||0}</div>
-          <div class="small text-muted">Halaman</div>
+          <div class="fw-bold" style="color:var(--accent)">${b.total_pages||0}</div>
+          <div style="font-size:.78rem;color:var(--text-3)">Halaman</div>
         </div>
       </div>
     </div>
@@ -327,20 +377,20 @@ async function _loadBookNotes(bookId) {
 
   const res = await apiGet(`api/notes.php?book_id=${bookId}&limit=10`);
   if (!res.success || !res.data?.notes?.length) {
-    wrap.innerHTML = `<div class="text-muted small text-center py-2">Belum ada catatan untuk buku ini</div>`;
+    wrap.innerHTML = `<div style="color:var(--text-3);font-size:.82rem;text-align:center;padding:.5rem 0">Belum ada catatan untuk buku ini</div>`;
     return;
   }
 
   wrap.innerHTML = `
-    <div class="fw-semibold small text-muted mb-2">CATATAN BUKU INI</div>
+    <div style="font-size:.7rem;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem">CATATAN BUKU INI</div>
     ${res.data.notes.map(n => `
       <div class="card mb-2 p-2 card-hover" onclick="viewNote(${n.id}); bootstrap.Modal.getInstance(document.getElementById('modal-book-detail'))?.hide()">
         <div class="d-flex justify-content-between align-items-start">
           <div class="overflow-hidden flex-grow-1">
-            <div class="small fw-semibold text-truncate">${esc(n.note_title)}</div>
-            ${n.page_start ? `<div class="small text-muted">Hal. ${n.page_start}–${n.page_end||n.page_start}</div>` : ''}
+            <div style="font-size:.82rem;font-weight:700;color:var(--text)" class="text-truncate">${esc(n.note_title)}</div>
+            ${n.page_start ? `<div style="font-size:.78rem;color:var(--text-3)">Hal. ${n.page_start}–${n.page_end||n.page_start}</div>` : ''}
           </div>
-          <div class="small text-muted ms-2 text-nowrap">${fmtDateShort(n.created_at)}</div>
+          <div style="font-size:.72rem;color:var(--text-3);margin-left:.5rem;white-space:nowrap">${fmtDateShort(n.created_at)}</div>
         </div>
       </div>`).join('')}`;
 }
@@ -417,4 +467,28 @@ function openScheduleFromDetail() {
   if (!bookId) return;
   bootstrap.Modal.getInstance(document.getElementById('modal-book-detail'))?.hide();
   setTimeout(() => openScheduleModal(bookId), 300);
+}
+
+// ── Quick add book from empty state suggestion ─
+async function quickAddBook(title, author, genre) {
+  const res = await apiPost('api/books.php', {
+    title, author, genre, status: 'want',
+    description: 'Ditambahkan dari saran buku populer'
+  });
+  if (res.success) {
+    toast(`"${title}" ditambahkan ke Ingin Baca! 📚`, 'success');
+    loadBooks();
+  } else {
+    toast(res.error || 'Gagal menambahkan', 'error');
+  }
+}
+
+// ── Open AI Chat from book detail ─────────────
+function openAIChatFromDetail() {
+  const bookId = App.currentBookId;
+  if (!bookId) return;
+  // Get book title from modal
+  const titleEl = document.querySelector('#book-detail-body h5, #book-detail-body .book-title');
+  const title   = titleEl?.textContent?.trim() || 'Buku';
+  openAIChatModal(bookId, title);
 }
