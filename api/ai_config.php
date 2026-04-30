@@ -7,7 +7,7 @@
 
 // ── Groq AI (Rekomendasi Buku) ────────────────
 // Daftar gratis: https://console.groq.com
-$groq_api_key = '';
+$groq_api_key = 'gsk_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 
 // ── Telegram Bot ──────────────────────────────
 // Cara setup (5 menit):
@@ -16,8 +16,8 @@ $groq_api_key = '';
 // 3. Kirim pesan ke bot kamu
 // 4. Buka: https://api.telegram.org/bot{TOKEN}/getUpdates
 // 5. Catat chat_id dari response
-$telegram_token   = '';
-$telegram_chat_id = '';  // chat ID kamu
+$telegram_token   = 'XXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
+$telegram_chat_id = '000000000';  // chat ID kamu
 
 // ── Google Drive Backup ───────────────────────
 // Cara setup:
